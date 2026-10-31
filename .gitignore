@@ -1,0 +1,13 @@
+node_modules/
+.DS_Store
+.env*
+*.log
+# Credentials and exports from earlier versions must remain private.
+client_secret*.json
+token*.json
+*cookies*
+browser-session.json
+*.ytmsort.json
+sort-plan.json
+ytmsorter-workspace-*.json
+data/
