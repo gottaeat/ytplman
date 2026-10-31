@@ -7,7 +7,9 @@ Keep only the specified playlist operations. Black/white CSS, monospace, native 
 - `tests/`: Node tests with fake clients.
 - `scripts/`: synthetic demo and optional Playwright regression.
 
-Use Node 24+. Run `npm test`, `node scripts/ui-smoke.mjs`, and `docker build -t ytplman .` after runtime changes. Playwright/Chromium are external test tools, not application dependencies; see the README for paths and screenshot capture.
+Demo: `npm run demo`, then open [localhost:3001](http://localhost:3001). Cookie: `SAPISID=demo`. Playlist: `PLdemo`.
+
+Use Node 24+. Run `npm test`, `node scripts/ui-smoke.mjs`, and `docker build -t ytplman .` after runtime changes. Playwright/Chromium are external test tools, not application dependencies. Set `PLAYWRIGHT_MODULE` and `BROWSER_EXECUTABLE` to existing installations if needed; `UI_SCREENSHOT=/absolute/path.png` saves a synthetic screenshot.
 
 Check monochrome rendering under a light system theme, group dragging, shift-selection, up/down, deletion/reset, review/cancel, progress/failure/reload recovery, empty lists, reload reset, and narrow screens. New edits must hide completed progress. Local edits must make no requests. Use only synthetic data and cookies in tests/screenshots.
 

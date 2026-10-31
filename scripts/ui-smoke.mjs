@@ -76,6 +76,11 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('.song').length === 22);
   const ids = () => page.locator('.song').evaluateAll((rows) => rows.map((row) => row.dataset.id));
   const original = await ids();
+  if (process.env.UI_SCREENSHOT) {
+    await page.locator('#sort').click();
+    await page.screenshot({ path: process.env.UI_SCREENSHOT, fullPage: true });
+    await page.locator('#reset').click();
+  }
   const drag = async (from, to, after = false) => {
     await from.scrollIntoViewIfNeeded();
     const a = await from.boundingBox();
@@ -153,8 +158,6 @@ try {
   await page.locator('#all').check();
   await page.locator('#all').uncheck();
   await page.locator('#sort').click();
-  if (process.env.UI_SCREENSHOT)
-    await page.screenshot({ path: process.env.UI_SCREENSHOT, fullPage: true });
   await page.locator('#commit').click();
   await page.locator('#confirm').click();
   await page.waitForFunction(
