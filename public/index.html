@@ -1,107 +1,47 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
-    <link rel="icon" href="data:," />
-    <link rel="stylesheet" href="/app.css" />
-    <script type="module" src="/app.js"></script>
-    <title>ytplman</title>
-  </head>
-  <body>
-    <main>
-      <header>
-        <h1>ytplman</h1>
-        <span>one playlist. this tab only.</span>
-      </header>
-      <section class="inputs" aria-label="Open a playlist">
-        <form id="cookie-form" autocomplete="off">
-          <label for="cookie">01 / Cookie</label>
-          <input
-            id="cookie"
-            type="password"
-            placeholder="Paste YouTube Cookie header"
-            autocomplete="off"
-            spellcheck="false"
-            required
-            maxlength="60000"
-          />
-          <button>Set cookie</button>
-        </form>
-        <form id="playlist-form" autocomplete="off">
-          <label for="playlist">02 / Playlist</label>
-          <input
-            id="playlist"
-            type="text"
-            placeholder="https://www.youtube.com/playlist?list=…"
-            autocomplete="off"
-            spellcheck="false"
-            required
-            maxlength="1000"
-          />
-          <button id="load" disabled>Load playlist</button>
-        </form>
-        <details>
-          <summary>Where is the cookie?</summary>
-          <p>
-            Sign in to YouTube. Open developer tools → Network, reload, select a YouTube request,
-            and copy its <strong>Cookie</strong> request header value. Paste only here. It stays in
-            memory until you close or refresh this page.
-          </p>
-        </details>
-      </section>
-      <p id="status" role="status">Set a cookie, then load a playlist. Nothing is stored.</p>
-      <section aria-labelledby="title">
-        <div class="list-heading">
-          <h2 id="title">No playlist loaded</h2>
-          <span id="count">0 songs</span>
-        </div>
-        <div class="toolbar">
-          <button id="sort" disabled>Sort A–Z + dedupe</button>
-          <span class="spacer"></span>
-          <button id="reset" disabled>Reset edits</button>
-          <button id="commit" class="primary" disabled>Commit…</button>
-        </div>
-        <div class="selection-bar">
-          <label><input id="all" type="checkbox" disabled /> Select all</label>
-          <span id="selected">0 selected</span>
-          <span class="spacer"></span>
-          <button id="up" disabled aria-label="Move selected up">↑</button>
-          <button id="down" disabled aria-label="Move selected down">↓</button>
-          <button id="delete" disabled>Delete selected</button>
-        </div>
-        <div
-          id="songs"
-          class="songs"
-          tabindex="0"
-          aria-label="Playlist songs"
-          aria-describedby="hint"
-        >
-          <p class="empty">Your playlist will appear here.</p>
-        </div>
-        <p id="hint" class="hint">
-          Drag to reorder. Check several songs to move or delete them together. Shift-click selects
-          a range.
-        </p>
-      </section>
-      <footer>
-        Sort by artist/channel, then title. Dedupe exact artist/channel + title matches.
-      </footer>
-    </main>
-    <dialog id="review" aria-labelledby="review-title">
-      <div class="review-heading">
-        <h2 id="review-title">Review changes</h2>
-        <button id="close-review" aria-label="Close review">×</button>
-      </div>
-      <p id="summary"></p>
-      <div id="changes" class="changes"></div>
-      <p class="hint">Only this playlist changes. A failed commit may be partial.</p>
-      <button id="confirm" class="primary">Commit to YouTube</button>
-    </dialog>
-    <section id="progress-panel" class="progress-panel" hidden aria-label="Commit progress">
-      <label for="progress" id="progress-label">Checking playlist…</label>
-      <div><progress id="progress" max="1" value="0"></progress><span id="percent">0%</span></div>
-    </section>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/app.css">
+  <script type="module" src="/app.js"></script>
+  <title>ytplman</title>
+</head>
+<body>
+<main>
+  <form id="cookie-form" autocomplete="off">
+    <label for="cookie">Cookie</label>
+    <input id="cookie" type="password" autocomplete="off" spellcheck="false" maxlength="60000" required>
+    <button>Set</button>
+  </form>
+  <form id="playlist-form" autocomplete="off">
+    <label for="playlist">Playlist</label>
+    <input id="playlist" type="text" autocomplete="off" spellcheck="false" maxlength="1000" required>
+    <button id="load" disabled>Load</button>
+  </form>
+  <p id="status" role="status"></p>
+  <fieldset id="editor" disabled>
+    <h1 id="title"></h1>
+    <nav aria-label="Playlist actions">
+      <button id="sort">A–Z + dedupe</button>
+      <label><input id="all" type="checkbox"> All</label>
+      <button id="up" aria-label="Move selected up">↑</button>
+      <button id="down" aria-label="Move selected down">↓</button>
+      <button id="delete">Delete</button>
+      <button id="reset">Reset</button>
+      <button id="commit">Commit…</button>
+    </nav>
+    <progress id="progress" max="1" value="0" hidden aria-label="Commit progress"></progress>
+    <div id="songs" tabindex="0" aria-label="Playlist songs"></div>
+  </fieldset>
+</main>
+<dialog id="review" aria-label="Review changes">
+  <p id="summary"></p>
+  <pre id="changes"></pre>
+  <button id="close-review">Cancel</button>
+  <button id="confirm">Commit to YouTube</button>
+</dialog>
+</body>
 </html>

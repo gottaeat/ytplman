@@ -1,30 +1,11 @@
 # Security
 
-Run ytplman on localhost for your own account. Do not expose it to the internet or a shared network.
-It has no server login or multi-user isolation. Its cookie input accepts a powerful YouTube session
-credential.
+Localhost only. No login or multi-user isolation. YouTube cookies grant account access; keep them private.
 
-Cookies and playlists live only in browser/request memory. No app data is written to browser
-storage, disk, a database, or a session cache. Refreshing loses the current page's state. Memory can
-still be read by browser extensions, injected same-origin code, or someone controlling the machine.
-Browser/password-manager behavior and OS memory handling are outside the app's control.
+Credentials, playlists, and edits stay in browser/request memory. No persistence or session cache. Extensions and anyone controlling the machine may read memory. Clear legacy ytmsorter site data manually. Clearing this app does not revoke your Google session.
 
-The server uses explicit static-file routes, a Host allowlist, same-origin JSON requests, a
-restrictive content security policy, and `no-store` responses. Cookies are sent to the local server
-for a load/commit and used by YouTube.js; they are not returned in responses or logged. Raw
-upstream/parser errors are replaced with application messages. Remote names are rendered as text.
+HTTP uses explicit file routes, Host/origin checks, JSON-only inputs, size limits, CSP, and `no-store`. Cookies and raw upstream errors are never returned or logged. Remote strings are rendered as text.
 
-Only an explicit confirmed commit writes to YouTube. Live edit access, owner, entry IDs, video IDs,
-and order are checked first. Deletes affect exact playlist entries; they do not delete videos or
-unlike them. Writes are sequential and verified. An interrupted or failed request can partly
-succeed. There is no automatic retry, rollback, stored receipt, or recovery job. Load fresh state
-after any failure.
+Only a confirmed commit writes. It checks live permissions, owner, entry IDs, videos, and order, then writes sequentially and verifies. Failure/disconnection may leave partial changes; load again. No rollback or retry. In-flight writes may finish after disconnection.
 
-Upgrading from older ytmsorter versions does not erase old browser records. Clear their site data in
-your browser to remove saved credentials and drafts. Disconnecting this app or clearing its state
-does not sign you out of Google. Revoke a leaked session through your Google account's security
-settings.
-
-Report vulnerabilities through the repository's private GitHub reporting channel if available.
-Otherwise open an issue requesting a private contact, without credentials or exploit details. Use
-synthetic data in reports. Fixes target the latest version; there is no guaranteed response time.
+Report vulnerabilities privately through GitHub if available; otherwise request a private contact in an issue. Never include credentials or exploit details publicly. Fixes target the latest version.

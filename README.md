@@ -1,115 +1,47 @@
 # ytplman
 
-One playlist. One cookie. No storage.
+One YouTube playlist, one cookie, no storage. Black and white. Monospace.
+Plain HTML, CSS, JavaScript, and Node HTTP. Only dependency: `youtubei.js`.
 
-A small, dark YouTube playlist editor. Paste a cookie and a playlist link, arrange the songs, review
-the changes, commit. No account setup, library, database, browser storage, saved drafts, or frontend
-framework.
-
-![ytplman: two inputs, one dark song list, and simple editing controls](docs/playlist-editor.png)
+![Playlist editor](docs/playlist-editor.png)
 
 ## Run
 
-Node.js 24 or newer:
+Node 24+:
 
 ```sh
 npm ci
 npm start
 ```
 
-Open [localhost:3000](http://localhost:3000).
-
-Or use Docker:
-
-```sh
-docker compose up --build -d
-```
+Open [localhost:3000](http://localhost:3000). Or run `docker compose up --build -d`.
+`PORT` defaults to `3000`; `HOST` to `127.0.0.1`. Keep it on localhost.
 
 ## Use
 
-1. Paste your YouTube **Cookie** request header and press **Set cookie**.
-2. Paste a playlist link and press **Load playlist**. Use an editable playlist owned by that
-   signed-in channel.
-3. Press **Sort A–Z + dedupe**, or arrange the songs yourself.
-4. Press **Commit…** to see every deletion and the complete final order. Close the review to keep
-   editing, or press **Commit to YouTube**.
-5. Keep the page open. The progress bar reaches 100% after YouTube's final playlist has been
-   checked.
+1. Paste the YouTube **Cookie** request header; press **Set**.
+2. Paste a playlist URL or ID; press **Load**. It must be editable by that cookie's channel.
+3. **A–Z + dedupe** sorts by channel, then title. Dedupe keeps the first exact channel + title match, including case and spaces. Different video IDs can match.
+4. Check songs, Shift-click a range, or choose **All**. Drag to reorder; **↑ / ↓** also moves the selection. **Delete** removes selected entries. **Reset** restores the loaded order.
+5. **Commit…** shows deletions and old → new positions. **Commit to YouTube** applies them. The progress bar completes after verification.
 
-To get the cookie: sign in to YouTube, open developer tools → **Network**, reload, select a request
-to `www.youtube.com`, and copy the **Cookie** value under **Request Headers**. Paste that single
-header value, not all headers or a cookies file. Cookies are credentials: keep them private.
+Cookie: sign in to YouTube → developer tools → Network → reload → select a YouTube request → copy **Request Headers → Cookie**. Paste only the header value. Keep it private.
 
-## Arrange songs
+Refresh/close loses the cookie and edits. No browser storage, files, database, or session cache. Clear old ytmsorter site data manually if upgrading.
 
-- **Sort A–Z + dedupe** sorts by the artist/channel string returned by YouTube, then the title.
-  Sorting is English, case-insensitive, with natural number ordering. It does not guess artists from
-  titles or strip channel suffixes.
-- Dedupe compares **both channel and title exactly**, including case and spaces. The first entry
-  survives. Different video IDs with the same two strings count as duplicates; different titles or
-  channels remain distinct. Same-title uploads can be different recordings: inspect the commit
-  review.
-- Check songs to select them. Shift-click selects a range. **Select all** selects the whole list.
-- Drag a song to move it. Drag a selected song to move the selection together, preserving its order.
-  The line marks the insertion point. Drag near the top/bottom edge to scroll; on touch, drag the
-  grip.
-- **↑ / ↓** moves the selection one position. **Delete selected** removes it from the draft. It does
-  not delete videos or change likes.
-- **Reset edits** returns to the loaded playlist. Nothing writes to YouTube until you confirm a
-  commit.
+Commits recheck live ownership, permissions, entry IDs, videos, and order. Writes are sequential, at least one second apart, with final verification. A failed/disconnected commit may be partial: load again. No retries or rollback. Removing entries does not delete videos or unlike songs. Avoid concurrent edits elsewhere.
 
-## Nothing is saved
+Uses the unofficial [YouTube.js](https://github.com/LuanRT/YouTube.js) API; it may break or put your account at risk. System/read-only playlists are unsupported.
 
-The cookie, loaded playlist, and edits exist only in memory. Refreshing or closing the page loses
-them. The app sets no browser cookies and uses no localStorage, sessionStorage, IndexedDB, files,
-database, or session cache. HTTP responses use `Cache-Control: no-store`.
-
-Upgrading from ytmsorter? Clear that origin's old site data once in your browser settings to remove
-previously saved credentials and drafts. This rewrite neither reads nor migrates them.
-
-## Commits
-
-Before writing, the server reloads the playlist and checks edit access, owner, entry IDs, video IDs,
-and order against the loaded version. If anything changed, load again. Removals address exact
-playlist entries, so repeated video IDs stay distinct. Writes run sequentially, at least one second
-apart, followed by a full order check. Progress streams over the commit request; there are no
-background jobs or stored receipts.
-
-A failed or interrupted commit can have changed YouTube. There is no rollback, automatic retry, or
-resume. Load the playlist again to inspect its actual state before editing further. Closing the
-connection stops subsequent writes when detected; an in-flight write may still finish. Do not edit
-the same playlist elsewhere during a commit.
-
-This uses the unofficial [YouTube.js](https://github.com/LuanRT/YouTube.js) API. It can break, and
-cookie-based automation carries account risk. Keep this app on localhost. It is a personal tool, not
-a public service. Liked Music and other non-editable/system playlists are not supported.
-
-## Configuration
-
-- `PORT`: `3000` by default.
-- `HOST`: `127.0.0.1` by default; Docker listens internally on `0.0.0.0`, with Compose publishing
-  loopback only.
-- `BASE_URL`: optional additional allowed origin, useful behind a local proxy.
-
-One server process accepts one commit at a time. Maximum 10,000 playlist entries and 8 MiB per JSON
-request. There are no credentials in environment variables or server configuration.
-
-## Development
+## Check
 
 ```sh
 npm test
 npm run demo
 ```
 
-The demo runs at [localhost:3001](http://localhost:3001). Use `SAPISID=demo` as the cookie and
-`PLdemo` as the playlist. All changes affect synthetic process memory; it never contacts YouTube.
-Restart it to reset the playlist.
+Demo: [localhost:3001](http://localhost:3001), cookie `SAPISID=demo`, playlist `PLdemo`. Synthetic memory only; never contacts YouTube. Restart to reset.
 
-The only direct dependency is `youtubei.js`. HTTP, tests, files, and streaming use Node's standard
-library. The frontend is plain HTML, CSS, and JavaScript. See [CONTRIBUTING.md](CONTRIBUTING.md) for
-browser checks and [SECURITY.md](SECURITY.md) for security boundaries.
+Optional browser regression: `node scripts/ui-smoke.mjs`. Set `PLAYWRIGHT_MODULE` and `BROWSER_EXECUTABLE` for existing local installations. `UI_SCREENSHOT=/absolute/path.png` refreshes the image. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
-## License
-
-[GNU AGPL v3.0](LICENSE), `AGPL-3.0-only`. Copyright © 2026 ytplman contributors. Third-party
-dependencies retain their licenses. Not affiliated with Google or YouTube.
+[AGPL-3.0-only](LICENSE). © 2026 ytplman contributors. Not affiliated with Google or YouTube.

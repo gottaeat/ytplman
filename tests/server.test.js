@@ -258,7 +258,7 @@ test('YouTube adapter paginates exact entry IDs and refuses read-only or incompl
         return { info: { is_editable: false } };
       },
     }).read('PLtest'),
-    /cannot edit/,
+    /cannot edit/i,
   );
   await assert.rejects(
     operations({
@@ -266,6 +266,6 @@ test('YouTube adapter paginates exact entry IDs and refuses read-only or incompl
         return { info: { is_editable: true }, items: [{ id: 'video' }] };
       },
     }).read('PLtest'),
-    /incomplete/,
+    /incomplete/i,
   );
 });

@@ -1,7 +1,7 @@
 import { createApp } from './server.js';
 const port = Number(process.env.PORT || 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT.');
-const server = createApp({ origin: process.env.BASE_URL });
+const server = createApp();
 server.listen(port, process.env.HOST || '127.0.0.1', () =>
   console.log(`ytplman: http://localhost:${port}`),
 );

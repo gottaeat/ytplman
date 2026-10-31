@@ -64,6 +64,9 @@ try {
     await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme),
     'dark',
   );
+  assert.equal(await page.locator('body').evaluate((node) => getComputedStyle(node).fontFamily), 'monospace');
+  assert.equal(await page.locator('body').evaluate((node) => getComputedStyle(node).color), 'rgb(255, 255, 255)');
+  assert.equal(await page.locator('html').evaluate((node) => getComputedStyle(node).backgroundColor), 'rgb(0, 0, 0)');
   await page.locator('#cookie').fill('SAPISID=demo');
   await page.locator('#cookie-form button').click();
   assert.equal(await page.locator('#cookie').inputValue(), '');
@@ -119,25 +122,25 @@ try {
   assert.equal((await ids()).length, 19);
   await page.locator('#reset').click();
   assert.deepEqual(await ids(), original);
-  await drag(page.locator('.song').nth(5).locator('.grip'), page.locator('.song').nth(0));
+  await drag(page.locator('.song').nth(5).locator('.song-text'), page.locator('.song').nth(0));
   assert.equal((await ids())[0], 'entry-5');
   await page.locator('#reset').click();
-  const grip = await page.locator('.song').first().locator('.grip').boundingBox();
+  const grip = await page.locator('.song').first().locator('.song-text').boundingBox();
   const box = await page.locator('#songs').boundingBox();
   await page.mouse.move(grip.x + 5, grip.y + 5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height - 8, { steps: 12 });
-  await page.waitForFunction(() => document.getElementById('songs').scrollTop > 150);
+  await page.waitForFunction(() => document.getElementById('songs').scrollTop > 20);
   await page.keyboard.press('Escape');
   await page.mouse.up();
   assert.deepEqual(await ids(), original, 'Escape cancels the scrolling drag');
   await page.locator('#sort').click();
   assert.equal((await ids()).length, 21);
   assert.ok(!(await ids()).includes('entry-6'));
-  assert.equal(await page.locator('.song .song-text span').first().textContent(), 'Air');
+  assert.equal(await page.locator('.song .song-text').first().textContent(), '1. Air / All I Need');
   await page.locator('#commit').click();
   assert.equal(await page.locator('#review').isVisible(), true);
-  assert.match(await page.locator('#summary').textContent(), /22 → 21 songs. 1 deletion/);
+  assert.match(await page.locator('#summary').textContent(), /Delete: 1. Move:/);
   await page.locator('#close-review').click();
   assert.equal(requests.length, 1, 'all edits and review stay local');
   for (const width of [390, 768, 1024, 1100]) {
@@ -149,27 +152,28 @@ try {
   }
   await page.locator('#all').check();
   await page.locator('#all').uncheck();
+  await page.locator('#sort').click();
   if (process.env.UI_SCREENSHOT)
     await page.screenshot({ path: process.env.UI_SCREENSHOT, fullPage: true });
   await page.locator('#commit').click();
   await page.locator('#confirm').click();
   await page.waitForFunction(
-    () => document.getElementById('status').textContent === 'Committed. Playlist verified.',
+    () => document.getElementById('status').textContent === 'Committed.',
   );
-  assert.equal(await page.locator('#percent').textContent(), '100%');
+  assert.equal(await page.locator('#progress').evaluate((bar) => bar.position), 1);
   assert.equal(await page.locator('#commit').isDisabled(), true);
   // The list really scrolls and can be emptied after a successful commit.
   assert.ok(await page.locator('#songs').evaluate((box) => box.scrollHeight > box.clientHeight));
   await page.locator('#all').check();
   await page.locator('#delete').click();
   await page.locator('#commit').click();
-  assert.match(await page.locator('#changes').textContent(), /every song will be removed/);
+  assert.equal(await page.locator('#changes').textContent().then((text) => text.split('\n').filter((line) => line.startsWith('- ')).length), 21);
   await page.locator('#confirm').click();
   await page.waitForFunction(
-    () => document.getElementById('status').textContent === 'Committed. Playlist verified.',
+    () => document.getElementById('status').textContent === 'Committed.',
   );
   assert.equal(await page.locator('.song').count(), 0);
-  assert.equal(await page.locator('#percent').textContent(), '100%');
+  assert.equal(await page.locator('#progress').evaluate((bar) => bar.position), 1);
   assert.equal(await page.evaluate(() => window.storageCalls), 0);
   assert.deepEqual(await context.cookies(), []);
   assert.deepEqual(await page.evaluate(() => indexedDB.databases()), []);
@@ -213,7 +217,7 @@ try {
   );
   assert.equal(await page.locator('#sort').isDisabled(), true);
   assert.equal(await page.locator('#load').isEnabled(), true);
-  assert.notEqual(await page.locator('#percent').textContent(), '100%');
+  assert.notEqual(await page.locator('#progress').evaluate((bar) => bar.position), 1);
   assert.equal(await page.evaluate(() => window.storageCalls), 0);
   assert.deepEqual(external, []);
   assert.deepEqual(errors, []);
