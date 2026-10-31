@@ -126,3 +126,28 @@ test('deleting every song verifies an empty playlist', async () => {
   assert.deepEqual(f.live.items, []);
   assert.equal(f.events.at(-1).type, 'done');
 });
+
+test('a disconnect after one confirmed edit prevents every remaining write', async () => {
+  const f = fixture();
+  await assert.rejects(commit(f.client, f.initial, [], {
+    ...f.options, stopped: () => f.calls.includes('remove:a'),
+  }), /closed/);
+  assert.deepEqual(f.calls, ['read', 'remove:a']);
+  assert.deepEqual(f.live.items.map((item) => item.id), ['b', 'c', 'd']);
+  assert.ok(!f.events.some((event) => event.type === 'done'));
+});
+
+test('writes are sequential and start no faster than the configured interval', async () => {
+  const f = fixture(), starts = [];
+  const remove = f.client.remove;
+  let pending = false;
+  f.client.remove = async (...args) => {
+    assert.equal(pending, false);
+    pending = true; starts.push(Date.now());
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    await remove(...args); pending = false;
+  };
+  await commit(f.client, f.initial, [], { ...f.options, delay: 40 });
+  for (let i = 1; i < starts.length; i++) assert.ok(starts[i] - starts[i - 1] >= 38);
+  assert.equal(starts.length, 4);
+});

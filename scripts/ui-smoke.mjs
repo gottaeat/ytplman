@@ -89,7 +89,7 @@ try {
   await page.locator('.song input').nth(0).check();
   await page.locator('.song input').nth(1).check();
   await drag(
-    page.locator('.song').nth(0).locator('.song-text'),
+    page.locator('.song').nth(0).locator('span'),
     page.locator('.song').nth(4),
     true,
   );
@@ -122,12 +122,12 @@ try {
   assert.equal((await ids()).length, 19);
   await page.locator('#reset').click();
   assert.deepEqual(await ids(), original);
-  await drag(page.locator('.song').nth(5).locator('.song-text'), page.locator('.song').nth(0));
+  await drag(page.locator('.song').nth(5).locator('span'), page.locator('.song').nth(0));
   assert.equal((await ids())[0], 'entry-5');
   await page.locator('#reset').click();
-  const grip = await page.locator('.song').first().locator('.song-text').boundingBox();
+  const start = await page.locator('.song').first().locator('span').boundingBox();
   const box = await page.locator('#songs').boundingBox();
-  await page.mouse.move(grip.x + 5, grip.y + 5);
+  await page.mouse.move(start.x + 5, start.y + 5);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height - 8, { steps: 12 });
   await page.waitForFunction(() => document.getElementById('songs').scrollTop > 20);
@@ -137,7 +137,7 @@ try {
   await page.locator('#sort').click();
   assert.equal((await ids()).length, 21);
   assert.ok(!(await ids()).includes('entry-6'));
-  assert.equal(await page.locator('.song .song-text').first().textContent(), '1. Air / All I Need');
+  assert.equal(await page.locator('.song span').first().textContent(), '1. Air / All I Need');
   await page.locator('#commit').click();
   assert.equal(await page.locator('#review').isVisible(), true);
   assert.match(await page.locator('#summary').textContent(), /Delete: 1. Move:/);
@@ -166,6 +166,7 @@ try {
   assert.ok(await page.locator('#songs').evaluate((box) => box.scrollHeight > box.clientHeight));
   await page.locator('#all').check();
   await page.locator('#delete').click();
+  assert.equal(await page.locator('#progress').isVisible(), false, 'new edits must hide the previous completed progress');
   await page.locator('#commit').click();
   assert.equal(await page.locator('#changes').textContent().then((text) => text.split('\n').filter((line) => line.startsWith('- ')).length), 21);
   await page.locator('#confirm').click();
@@ -203,26 +204,29 @@ try {
   await page.locator('#load').click();
   await page.waitForFunction(() => document.querySelectorAll('.song').length === 2);
   assert.equal(await page.locator('#title script').count(), 0);
-  await page.locator('#sort').click();
-  await page.locator('#commit').click();
-  await page.route('**/api/commit', (route) =>
-    route.fulfill({
-      contentType: 'application/x-ndjson',
-      body: '{"type":"progress","done":1,"total":3,"message":"Writing"}\n{"type":"error","message":"Test failure"}\n',
-    }),
-  );
-  await page.locator('#confirm').click();
-  await page.waitForFunction(() =>
-    document.getElementById('status').textContent.includes('Test failure'),
-  );
-  assert.equal(await page.locator('#sort').isDisabled(), true);
-  assert.equal(await page.locator('#load').isEnabled(), true);
-  assert.notEqual(await page.locator('#progress').evaluate((bar) => bar.position), 1);
+  let reply;
+  await page.route('**/api/commit', (route) => route.fulfill({ contentType: 'application/x-ndjson', body: reply }));
+  for (const [body, message] of [
+    ['{"type":"progress","done":1,"total":3,"message":"Writing"}\n{"type":"error","message":"Test failure"}\n', 'Test failure'],
+    ['{"type":"progress","done":1,"total":3,"message":"Writing"}\n', 'Connection lost.'],
+  ]) {
+    reply = body;
+    await page.locator('#sort').click(); await page.locator('#commit').click();
+    await page.locator('#confirm').click();
+    await page.waitForFunction((text) => document.getElementById('status').textContent.includes(text), message);
+    assert.equal(await page.locator('#sort').isDisabled(), true);
+    assert.equal(await page.locator('#load').isEnabled(), true);
+    assert.notEqual(await page.locator('#progress').evaluate((bar) => bar.position), 1);
+    await page.locator('#load').click();
+    await page.waitForFunction(() => !document.getElementById('editor').disabled);
+    assert.equal(await page.locator('#sort').isEnabled(), true);
+    assert.equal(await page.locator('#progress').isVisible(), false);
+  }
   assert.equal(await page.evaluate(() => window.storageCalls), 0);
   assert.deepEqual(external, []);
   assert.deepEqual(errors, []);
   console.log(
-    'Browser smoke passed: dark mode, no storage/network during edits, multi-select, drag, shift range, up/down, delete/reset, review, streamed progress, empty playlist, failure lock, reload reset and responsive layout.',
+    'Browser smoke passed: dark mode, no storage/network during edits, multi-select, drag, shift range, up/down, delete/reset, review, streamed progress, empty playlist, failure/truncated-stream recovery, progress reset, reload reset and responsive layout.',
   );
 } finally {
   await browser?.close();

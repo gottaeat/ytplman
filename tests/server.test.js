@@ -269,3 +269,60 @@ test('YouTube adapter paginates exact entry IDs and refuses read-only or incompl
     /incomplete/i,
   );
 });
+
+test('JSON media types are exact; oversized fixed-length and chunked bodies return safe errors', async () => {
+  let calls = 0;
+  await withServer(async (base) => {
+    const data = { cookie: 'private', playlist: 'PLtest' };
+    for (const type of ['text/plain', 'application/jsonp']) {
+      const response = await post(base + '/api/load', data, { 'Content-Type': type });
+      assert.equal(response.status, 400);
+      assert.equal((await response.json()).error, 'Expected JSON.');
+    }
+    assert.equal(calls, 0);
+    const good = await post(base + '/api/load', data, { 'Content-Type': 'Application/JSON; charset=utf-8' });
+    assert.equal(good.status, 200);
+    const payload = JSON.stringify({ cookie: 'private', pad: 'x'.repeat(8 * 1024 * 1024) });
+    const fixed = await fetch(base + '/api/load', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+    assert.equal(fixed.status, 400);
+    assert.equal((await fixed.json()).error, 'Request too large.');
+    const chunked = await new Promise((resolve, reject) => {
+      const req = request(base + '/api/load', { method: 'POST', headers: { 'Content-Type': 'application/json' } }, (res) => {
+        let text = '';
+        res.on('data', (chunk) => { text += chunk; });
+        res.on('end', () => resolve({ code: res.statusCode, text }));
+      });
+      req.on('error', reject); req.write(payload); req.end();
+    });
+    assert.equal(chunked.code, 400);
+    assert.deepEqual(JSON.parse(chunked.text), { error: 'Request too large.' });
+    assert.equal(calls, 1);
+  }, async () => { calls++; return { async read() { return snapshot; } }; });
+});
+
+test('rejected writes are masked and not retried; edit permissions fail closed', async () => {
+  for (const result of [null, { success: false }, { success: true, data: { status: 'FAILED' } }]) {
+    let calls = 0;
+    const client = operations({ actions: { async execute() {
+      calls++;
+      if (result === null) throw new Error('cookie=private');
+      return result;
+    } } });
+    await assert.rejects(client.remove('PLtest', 'entry'), (error) => !error.message.includes('private'));
+    assert.equal(calls, 1);
+  }
+  for (const [id, info] of [['PLtest', {}], ['PLtest', { is_editable: true, can_reorder: false }], ['LM', { is_editable: true }]]) {
+    await assert.rejects(operations({ async getPlaylist() { return { info }; } }).read(id), /cannot edit/i);
+  }
+});
+
+test('streamed failures do not expose raw errors or leave the server locked', async () => {
+  await withServer(async (base) => {
+    const response = await post(base + '/api/commit', { cookie: 'private', snapshot, order: [] });
+    const events = (await response.text()).trim().split('\n').map((line) => JSON.parse(line));
+    assert.equal(events.at(-1).type, 'error');
+    assert.equal(events.at(-1).message, 'Request failed.');
+    assert.ok(!JSON.stringify(events).includes('private'));
+    assert.equal((await post(base + '/api/load', { cookie: 'private', playlist: 'PLtest' })).status, 200);
+  }, async () => ({ async read() { return structuredClone(snapshot); }, async remove() { throw new Error('cookie=private'); } }));
+});

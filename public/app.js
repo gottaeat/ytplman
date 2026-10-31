@@ -35,7 +35,7 @@ function render() {
   list.replaceChildren(...items.map((item, i) => {
     const row = element('div'); row.className = 'song'; row.dataset.id = item.id;
     const check = element('input'); check.type = 'checkbox'; check.setAttribute('aria-label', `Select ${item.title}`);
-    const text = element('span', `${i + 1}. ${item.channel} / ${item.title}`); text.className = 'song-text';
+    const text = element('span', `${i + 1}. ${item.channel} / ${item.title}`);
     row.append(check, text);
     return row;
   }));
@@ -48,7 +48,7 @@ function edit(next) {
   items = next;
   const kept = new Set(ids());
   selected = new Set([...selected].filter((id) => kept.has(id)));
-  status(''); render();
+  $('progress').hidden = true; status(''); render();
 }
 async function post(path, data) {
   const response = await fetch('/api/' + path, {

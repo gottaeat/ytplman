@@ -1,5 +1,6 @@
 // Synthetic upstream for local UI checks. Never contacts YouTube.
 import { createApp } from '../src/server.js';
+import { AppError } from '../src/youtube.js';
 const rows = [
   ['Teardrop', 'Massive Attack'],
   ['Roads', 'Portishead'],
@@ -37,7 +38,7 @@ const playlist = {
 };
 const client = {
   async read(id) {
-    if (id !== playlist.id) throw new Error('Use PLdemo.');
+    if (id !== playlist.id) throw new AppError('Use PLdemo.');
     return structuredClone(playlist);
   },
   async remove(id, entry) {

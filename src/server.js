@@ -19,10 +19,10 @@ export function playlistId(value) {
 }
 
 async function body(req) {
-  if (!req.headers['content-type']?.startsWith('application/json')) throw new AppError('Expected JSON.');
+  if (req.headers['content-type']?.split(';', 1)[0].trim().toLowerCase() !== 'application/json') throw new AppError('Expected JSON.');
   const parts = []; let size = 0;
-  for await (const part of req) {
-    if ((size += part.length) > 8 * 1024 * 1024) throw new AppError('Request too large.');
+  for await (const part of req.iterator({ destroyOnReturn: false })) {
+    if ((size += part.length) > 8 * 1024 * 1024) { req.resume(); throw new AppError('Request too large.'); }
     parts.push(part);
   }
   try { return JSON.parse(Buffer.concat(parts).toString()); }

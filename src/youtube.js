@@ -44,11 +44,11 @@ export function operations(session) {
       const seen = new Set();
       for (let pages = 0; ; pages++) {
         for (const video of page.items) {
-          const entry = video.set_video_id, videoId = video.id || video.content_id;
+          const entry = video.set_video_id, videoId = video.id;
           if (!entry || !videoId || seen.has(entry)) throw new AppError('Incomplete or duplicate entry IDs.');
           seen.add(entry);
-          snapshot.items.push({ id: entry, videoId, title: String(video.title || video.metadata?.title || videoId),
-            channel: String(video.author?.name || video.metadata?.metadata?.metadata_rows?.[0]?.metadata_parts?.[0]?.text || '') });
+          snapshot.items.push({ id: entry, videoId, title: String(video.title || videoId),
+            channel: String(video.author?.name || '') });
           if (snapshot.items.length > 10000) throw new AppError('Playlist exceeds 10,000 songs.');
         }
         if (!page.has_continuation) return snapshot;
